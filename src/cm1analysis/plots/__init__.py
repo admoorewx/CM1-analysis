@@ -8,4 +8,5 @@ from . import (
     cross_section,  # noqa: F401
     planar,  # noqa: F401
     timeseries,  # noqa: F401
+    wind,  # noqa: F401
 )
