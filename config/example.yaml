@@ -1,0 +1,36 @@
+# Example cm1analysis configuration.
+#
+# Copy this file to config/local/<name>.yaml (gitignored) and edit the copy.
+# Paths may use ~ and environment variables; relative paths are taken from
+# this file's directory. Unknown keys are reported as errors.
+
+# Where figures are written. Each plot category writes to its own subdirectory.
+output_dir: $CM1_IMAGES
+
+# CM1 output files inside each run directory.
+file_pattern: "cm1out_*.nc"
+
+dpi: 200
+
+# Font sizes in points (optional; any key left out uses the default).
+# Keys: title, suptitle, axis_label, tick, cbar_label, cbar_tick, legend, contour_label
+fonts:
+  title: 17
+  tick: 10
+
+# Experiment groups for multi-run plots (timeseries, statistics, comparisons).
+# Each run is a directory of CM1 output. color and marker are matplotlib values;
+# label (optional) replaces the run name in legends.
+experiments:
+  control:
+    control: {path: $CM1_DATA/control, color: k, marker: "*"}
+
+  lapse_rate:
+    LR82: {path: $CM1_DATA/lapse_rate/lr_82, color: red, marker: "*", label: "8.2 K/km"}
+    LR80: {path: $CM1_DATA/lapse_rate/lr_80, color: magenta, marker: "*", label: "8.0 K/km"}
+    LR78: {path: $CM1_DATA/lapse_rate/lr_78, color: tomato, marker: "*", label: "7.8 K/km"}
+
+# Per-category options, read by the plots in that category as they are ported.
+# Categories: planar, timeseries, statistics, cross_section, pressure, wind
+plots:
+  cross_section: {}

@@ -1,0 +1,20 @@
+# Conda environment for CM1-analysis (conda-forge only; versions the tests pass with).
+#   conda env create -f environment.yml
+#   conda activate cm1analysis
+# After editing:  conda env update -f environment.yml --prune
+name: cm1analysis
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - numpy=2.5.5
+  - scipy=1.18.1
+  - matplotlib-base=3.11.2   # no GUI backend; figures are written off-screen on the cluster
+  - netcdf4=1.7.5
+  - metpy=1.7.1
+  - pyyaml=6.0.3
+  - pytest=9.2.0
+  - ruff=0.17.6
+  - pip
+  - pip:
+      - -e .

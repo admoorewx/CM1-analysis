@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.ruff_cache/
+
+# Model output and figures never belong in the repo
+*.nc
+*.nc4
+*.png
+*.pdf
+*.gif
+
+# Job logs
+*.log
+*_out.txt
+*_err.txt
+slurm-*.out
+
+# Machine-specific configuration (real paths, accounts, emails)
+config/local/
+jobs/local/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
