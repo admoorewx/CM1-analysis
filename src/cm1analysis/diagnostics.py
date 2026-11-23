@@ -115,15 +115,22 @@ def buoyancy(cm1: CM1File, time: int, level: int, window: Window = FULL) -> np.n
     def read(name: str) -> np.ndarray:
         return cm1.read(name, time, level=level, y=ys, x=xs, dtype=np.float64)
 
+    return buoyancy_from(cm1, read)
+
+
+def buoyancy_from(cm1: CM1File, read: Callable[[str], np.ndarray]) -> np.ndarray:
+    """Buoyancy from fields supplied by ``read(name)`` (any shape: a level, a section, ...).
+
+    See :func:`buoyancy`. Without qvpert, the base-state vapor is the mean of
+    what ``read`` returns along its last axis.
+    """
     thpert = read("thpert")
-    theta0 = read("th") - thpert
-    b = thpert / theta0
+    b = thpert / (read("th") - thpert)
     if cm1.has("qvpert"):
         b += EPS_VIRTUAL * read("qvpert")
     elif cm1.has("qv"):
-        # No perturbation written: use the level mean as the base state.
         qv = read("qv")
-        b += EPS_VIRTUAL * (qv - np.nanmean(qv))
+        b += EPS_VIRTUAL * (qv - np.nanmean(qv, axis=-1, keepdims=True))
     for name in cm1.hydrometeors:
         b -= read(name)
     return G * b
@@ -163,12 +170,21 @@ def air_density(cm1: CM1File, time: int, level: int, window: Window = FULL) -> n
     temperature correction when qv is available.
     """
     ys, xs = window
+
+    def read(name: str) -> np.ndarray:
+        return cm1.read(name, time, level=level, y=ys, x=xs, dtype=np.float64)
+
+    return density_from(cm1, read)
+
+
+def density_from(cm1: CM1File, read: Callable[[str], np.ndarray]) -> np.ndarray:
+    """Air density from fields supplied by ``read(name)``; see :func:`air_density`."""
     if _require(cm1, "air_density") == ("rho",):
-        return cm1.read("rho", time, level=level, y=ys, x=xs, dtype=np.float64)
-    p = cm1.read("prs", time, level=level, y=ys, x=xs, dtype=np.float64)
-    temp = cm1.read("th", time, level=level, y=ys, x=xs, dtype=np.float64) * (p / P00) ** (RD / CP)
+        return read("rho")
+    p = read("prs")
+    temp = read("th") * (p / P00) ** (RD / CP)
     if cm1.has("qv"):
-        temp *= 1.0 + EPS_VIRTUAL * cm1.read("qv", time, level=level, y=ys, x=xs, dtype=np.float64)
+        temp = temp * (1.0 + EPS_VIRTUAL * read("qv"))
     return p / (RD * temp)
 
 
@@ -209,3 +225,58 @@ def column_mass_flux_extremes(
             fmax[name] = flux if k == 0 else np.fmax(fmax[name], flux)
             fmin[name] = flux if k == 0 else np.fmin(fmin[name], flux)
     return fmax, fmin
+
+
+# --------------------------------------------------------- base state
+def base_state_profile(cm1: CM1File, total: str, pert: str, time: int = 0) -> np.ndarray:
+    """CM1 base-state profile total - pert (e.g. th - thpert) from one corner column, float64.
+
+    CM1's base state is horizontally uniform, so a single column is exact.
+    Staggered fields (u - upert) use their own grid's corner column.
+    """
+    a = cm1.read(total, time, y=0, x=0, dtype=np.float64)
+    b = cm1.read(pert, time, y=0, x=0, dtype=np.float64)
+    return a - b
+
+
+def freezing_level(cm1: CM1File, time: int = 0) -> int | None:
+    """Index of the lowest scalar level where the base-state temperature is at or below 0 C."""
+    if not cm1.has("th", "thpert", "prs", "prspert"):
+        return None
+    theta0 = base_state_profile(cm1, "th", "thpert", time)
+    p0 = base_state_profile(cm1, "prs", "prspert", time)
+    t0 = theta0 * (p0 / P00) ** (RD / CP)
+    below = np.flatnonzero(t0 <= 273.15)
+    return int(below[0]) if below.size else None
+
+
+def cold_pool_c(
+    cm1: CM1File, time: int, window: Window = FULL, filter_dbz: float | None = 10.0
+) -> np.ndarray:
+    """Cold pool intensity C = sqrt(2 * integral of max(-B, 0) dz), Squitieri and Gallus (2022) Eq. 1.
+
+    Integration in each column runs up from the surface and stops at the first
+    level where B >= 0 (the cold pool top) or at the base-state freezing
+    level, whichever is lower. C is set to 0 where composite reflectivity is
+    below ``filter_dbz`` (None disables the filter). Reads one level at a time.
+    """
+    _require(cm1, "buoyancy")
+    zf_m = cm1.zf_km * 1000.0
+    dz = np.diff(zf_m)
+    ktop = freezing_level(cm1, time) or dz.size
+    c_sq = None
+    active = None
+    for k in range(ktop):
+        b = buoyancy(cm1, time, k, window)
+        if c_sq is None:
+            c_sq = np.zeros_like(b)
+            active = np.ones(b.shape, dtype=bool)
+        c_sq += 2.0 * dz[k] * np.where(active, np.maximum(-b, 0.0), 0.0)
+        active &= b < 0.0
+        if not active.any():
+            break
+    c = np.sqrt(c_sq)
+    if filter_dbz is not None and cm1.has("cref"):
+        ys, xs = window
+        c[cm1.read("cref", time, y=ys, x=xs) < filter_dbz] = 0.0
+    return c

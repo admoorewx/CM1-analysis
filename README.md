@@ -50,7 +50,19 @@ cm1plot run planar /path/to/control -o images/ --plots cref,overview --times 720
 
 # An experiment group from the config: each run's plots plus comparisons with the reference run
 cm1plot run planar -c config/local/derecho.yaml -e lapse_rate
+
+# Storm-following west-east cross sections for one run
+cm1plot run cross_section /path/to/control -o images/
 ```
+
+Cross sections follow the system: by default each time's section runs
+through the bow apex (the forward-most point of the surface cold pool), with
+most of the window behind the gust front, and is averaged over 40 km across
+the line. Storm-relative winds use the system speed c_x, a line fit to the
+leading edge's position over an hour. `y_km`, `window_km`,
+`trailing_fraction`, `average_km` and `storm_u` in the config override
+these; see `cm1analysis/sections.py`. The momentum-transport plot
+(`cmt_section`) follows Mahoney et al. (2009, MWR 137, 3316).
 
 Plots run at one of three scopes: once per output **time**, once per **run**
 (plots that accumulate through time, such as swaths), or once per
@@ -84,10 +96,11 @@ src/cm1analysis/
   diagnostics.py  Derived fields: low-level wind, surface pressure, buoyancy, column reductions
   registry.py     Plot registry: required fields, scope, options
   pipeline.py     Runs plots over runs, files and times; contexts passed to plots
+  sections.py     Storm-following cross-section placement, storm motion, section cache
   config.py       YAML configuration
   style.py        Shared colormaps, font sizes and figure saving
   cli.py          cm1plot command
-  plots/          One module per category (planar done; others being ported)
+  plots/          One module per category (planar and cross_section done; others being ported)
 tests/          pytest suite using small synthetic CM1 files
 ```
 

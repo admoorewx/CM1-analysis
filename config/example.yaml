@@ -43,3 +43,12 @@ plots:
     prspert: {heights_km: [0, 1, 3, 5]}
     wind_swath: {refl_dbz: 45.0, interval_s: 7200}
     compare: {rows: [cref, cpc, wind_swath]}
+  cross_section:
+    window_km: 100.0          # section length; most of it behind the gust front
+    trailing_fraction: 0.75   # share of the window behind (west of) the gust front
+    # y_km: 750.0             # pin the section row; omit to follow the bow apex
+    average_km: 40.0          # average each section across the line (Mahoney and Lackmann 2011); 0 = one row
+    # storm_u: 24.0           # c_x in m/s; omit to estimate it from the leading edge's motion
+    leading_edge: cold_pool   # edge tracked for c_x: cold_pool, or reflectivity (>= edge_dbz, their 40 dBZ)
+    motion_window_s: 3600     # c_x is a line fit to the edge position over this window (theirs: 1 h)
+    cmt_section: {average_s: 1800}   # budget profiles averaged over 30 min, as in Mahoney et al. (2009)

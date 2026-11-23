@@ -15,7 +15,7 @@ import numpy as np
 from matplotlib import colormaps
 from matplotlib.colors import BoundaryNorm, Colormap, LinearSegmentedColormap, ListedColormap
 
-from ..style import WIND_BOUNDS, WIND_TICKS, wind_colormap
+from ..style import WIND_BOUNDS, WIND_TICKS, diverging_colormap, wind_colormap
 
 FILL_ALPHA = 0.5  # the legacy plan views drew filled contours at half opacity
 
@@ -122,6 +122,57 @@ FIELD_STYLES: dict[str, FieldStyle] = {
         "coolwarm", np.arange(-10.0, 10.25, 0.5), r"$\Delta\theta'$ (K)", extend="both"
     ),
 }
+
+
+_W_CMAP, _W_NORM = diverging_colormap(25.0, 1.0)
+
+# Cross sections (drawn opaque, as the legacy sections were)
+SECTION_STYLES: dict[str, FieldStyle] = {
+    "w": FieldStyle(
+        _W_CMAP,
+        _W_NORM.boundaries,
+        "Vertical velocity (m s$^{-1}$)",
+        norm=_W_NORM,
+        extend="both",
+        alpha=1.0,
+        ticks=np.arange(-25.0, 26.0, 5.0),
+    ),
+    "sr_speed": FieldStyle(
+        "plasma", np.arange(0.0, 62.0, 2.0), "Storm-relative wind speed (m s$^{-1}$)", extend="max", alpha=1.0
+    ),
+    "yvort": FieldStyle(
+        "RdBu_r",
+        np.round(np.arange(-0.05, 0.0501, 0.0025), 4),
+        r"$\eta$ (s$^{-1}$)",
+        extend="both",
+        alpha=1.0,
+    ),
+    "momentum_flux": FieldStyle(
+        "RdBu_r",
+        np.arange(-100.0, 105.0, 5.0),
+        "$u_{SR}w$ (m$^2$ s$^{-2}$); < 0: westerly momentum carried down",
+        extend="both",
+        alpha=1.0,
+    ),
+    "cooling_total": FieldStyle(
+        "plasma",
+        np.round(np.arange(-0.01, -0.0002, 0.0005), 5),
+        "Total microphysical cooling (K s$^{-1}$)",
+        extend="min",
+        alpha=1.0,
+    ),
+    "dbz_background": FieldStyle("Greys", np.arange(0.0, 75.0, 5.0), "Reflectivity (dBZ)", alpha=0.4),
+    "cold_pool_c": FieldStyle(
+        "plasma", np.arange(0.0, 52.0, 2.0), "Cold pool C (m s$^{-1}$)", extend="max", alpha=1.0
+    ),
+}
+
+
+def opaque(style: FieldStyle) -> FieldStyle:
+    """The same style drawn without transparency."""
+    from dataclasses import replace
+
+    return replace(style, alpha=1.0)
 
 
 def species_style(name: str) -> FieldStyle:

@@ -76,13 +76,13 @@ def test_run_plots_calls_each_scope_and_records_failures(clean_registry, tmp_pat
     def per_run(ctx):
         calls.append(("run", [f.seconds for f in ctx.frames()]))
 
-    clean_registry.register("needs_dbz", "planar", requires=["dbz"])(lambda ctx: None)
+    clean_registry.register("needs_rho", "planar", requires=["rho"])(lambda ctx: None)
 
     run = RunInput("ctl", tuple(write_run(tmp_path / "ctl", ntimes=3)))
     report = run_plots(run, registry.plots("planar"), _settings(tmp_path))
     assert ("time", 0.0, (6, 8)) in calls and ("time", 7200.0, (6, 8)) in calls
     assert ("run", [0.0, 3600.0, 7200.0]) in calls
-    assert report.skipped == {"needs_dbz": ["dbz"]}
+    assert report.skipped == {"needs_rho": ["rho"]}
     assert [(name, err) for name, _, err in report.failures] == [("per_time", "RuntimeError: boom")]
 
 
