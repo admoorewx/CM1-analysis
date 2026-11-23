@@ -20,7 +20,7 @@ from .io import DEFAULT_PATTERN
 from .registry import Category
 from .style import DEFAULT_DPI, FONT_DEFAULTS
 
-_TOP_KEYS = {"output_dir", "file_pattern", "dpi", "fonts", "experiments", "plots"}
+_TOP_KEYS = {"output_dir", "file_pattern", "dpi", "fonts", "experiments", "plots", "reference"}
 _RUN_KEYS = {"path", "color", "marker", "label"}
 
 
@@ -51,12 +51,23 @@ class Config:
     fonts: dict[str, int] = field(default_factory=dict)
     experiments: dict[str, dict[str, Run]] = field(default_factory=dict)
     plots: dict[str, dict[str, Any]] = field(default_factory=dict)
+    reference: str | None = None  # "group/run" compared against in experiment plots
 
     def experiment(self, name: str) -> dict[str, Run]:
         try:
             return self.experiments[name]
         except KeyError:
             raise ConfigError(f"no experiment {name!r}; defined: {sorted(self.experiments)}") from None
+
+    def run(self, ref: str) -> Run:
+        """Look up a run written as 'group/run'."""
+        group, sep, name = ref.partition("/")
+        if not sep:
+            raise ConfigError(f"run reference {ref!r} must be written 'group/run'")
+        runs = self.experiment(group)
+        if name not in runs:
+            raise ConfigError(f"experiment {group!r} has no run {name!r}; runs: {sorted(runs)}")
+        return runs[name]
 
     def plot_options(self, category: Category | str) -> dict[str, Any]:
         """Options for one plot category (the `plots:` block), empty if none are set."""
@@ -99,14 +110,18 @@ def load_config(path: str | Path) -> Config:
                 label=spec.get("label"),
             )
 
-    return Config(
+    config = Config(
         output_dir=_resolve(raw["output_dir"], base),
         file_pattern=str(raw.get("file_pattern", DEFAULT_PATTERN)),
         dpi=int(raw.get("dpi", DEFAULT_DPI)),
         fonts=dict(fonts),
         experiments=experiments,
         plots={k: dict(v or {}) for k, v in plots.items()},
+        reference=raw.get("reference"),
     )
+    if config.reference is not None:
+        config.run(config.reference)  # fail now, not after the per-run plots
+    return config
 
 
 def _resolve(value: str, base: Path) -> Path:

@@ -39,9 +39,26 @@ conda activate cm1analysis
 # Grid, fields, and which plots this file supports
 cm1plot inventory /path/to/cm1out_000120.nc
 
-# All registered plots and the fields they need
-cm1plot list
+# All registered plots, the fields they need, and their options
+cm1plot list --category planar
+
+# Every planar plot for one run (a directory of cm1out_*.nc, or specific files)
+cm1plot run planar /path/to/control -o images/
+
+# A few plots at chosen times, quickly
+cm1plot run planar /path/to/control -o images/ --plots cref,overview --times 7200,14400 --dpi 100
+
+# An experiment group from the config: each run's plots plus comparisons with the reference run
+cm1plot run planar -c config/local/derecho.yaml -e lapse_rate
 ```
+
+Plots run at one of three scopes: once per output **time**, once per **run**
+(plots that accumulate through time, such as swaths), or once per
+**experiment** (comparisons between runs). `--scope time,run,experiment`
+selects which to make. Figures are written to
+`<output>/<run or experiment>/<category>/<plot>/<plot>_<run>_<time>s.png`.
+A plot that fails is reported at the end and the rest still run; the exit
+status is nonzero if anything failed.
 
 CM1's output namelist decides which fields a file holds. Every plot declares
 the fields it reads, so the pipeline runs whatever a file supports and reports
@@ -63,12 +80,14 @@ as `$SCRATCH`, and unknown keys are reported as errors.
 
 ```
 src/cm1analysis/
-  io.py         CM1File reader: grid, staggering, field lookup, run file lists
-  registry.py   Plot registry and per-file field checks
-  config.py     YAML configuration
-  style.py      Shared colormaps, font sizes and figure saving
-  cli.py        cm1plot command
-  plots/        One module per category (being ported)
+  io.py           CM1File reader: grid, staggering, field lookup, run file lists
+  diagnostics.py  Derived fields: low-level wind, surface pressure, buoyancy, column reductions
+  registry.py     Plot registry: required fields, scope, options
+  pipeline.py     Runs plots over runs, files and times; contexts passed to plots
+  config.py       YAML configuration
+  style.py        Shared colormaps, font sizes and figure saving
+  cli.py          cm1plot command
+  plots/          One module per category (planar done; others being ported)
 tests/          pytest suite using small synthetic CM1 files
 ```
 

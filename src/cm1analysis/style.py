@@ -10,6 +10,7 @@ from pathlib import Path
 
 import matplotlib as mpl
 import numpy as np
+from matplotlib import colormaps
 from matplotlib.colors import BoundaryNorm, LinearSegmentedColormap, ListedColormap
 
 # Font sizes in points. cbar_* and contour_label are not rcParams; plot code
@@ -27,31 +28,46 @@ FONT_DEFAULTS: dict[str, int] = {
 
 DEFAULT_DPI = 200
 
-# Wind speed bins in m/s. 26.0 and 33.4 m/s are the severe (58 mph) and
-# significant-severe (75 mph) wind thresholds, so they get their own edges.
-WIND_BOUNDS = (
-    0.0, 2.5, 5.0, 7.5, 10.0, 12.5, 15.0, 17.5, 20.0, 22.5,
-    26.0, 27.5, 30.0, 33.4, 35.0, 37.5, 40.0, 42.5, 45.0, 47.5, 50.0,
-)  # fmt: skip
-WIND_COLORS = (
-    "black", "navy", "blue", "royalblue", "cornflowerblue", "dodgerblue",
-    "darkturquoise", "mediumspringgreen", "aquamarine", "palegreen",
-    "yellow", "gold", "orange", "darkred", "indianred", "lightcoral",
-    "violet", "mediumorchid", "indigo", "navy",
-)  # fmt: skip
+# Wind speed thresholds (m/s): severe is 58 mph, significant severe 75 mph.
+SEVERE_WIND = 26.0
+SIG_SEVERE_WIND = 33.5
+
+# The wind scale has three regimes, each a smooth ramp from one sequential
+# colormap, with a jump in hue and lightness at each threshold: calm-to-strong
+# sub-severe winds run pale green to dark blue, severe winds bright yellow to
+# orange, significant-severe winds magenta to deep purple. Each entry is
+# (bin edges, colormap, sampled range of that colormap).
+WIND_REGIMES = (
+    (tuple(np.arange(0.0, SEVERE_WIND + 0.1, 2.0)), "GnBu", (0.05, 0.9)),
+    ((SEVERE_WIND, 28.0, 30.0, 32.0, SIG_SEVERE_WIND), "YlOrRd", (0.1, 0.55)),
+    ((SIG_SEVERE_WIND, 35.0, 37.5, 40.0, 42.5, 45.0, 47.5, 50.0), "RdPu", (0.55, 1.0)),
+)
+WIND_BOUNDS = tuple(
+    float(b) for i, (edges, _, _) in enumerate(WIND_REGIMES) for b in (edges if i == 0 else edges[1:])
+)
+WIND_TICKS = (0.0, 10.0, 20.0, SEVERE_WIND, SIG_SEVERE_WIND, 40.0, 50.0)
+
 
 # Diverging scale for vertical velocity and other signed fields:
 # strong negative (purple) -> blue -> white at zero -> red -> strong positive (pink).
 DIVERGING_COLORS = ("#B976E6", "#00008B", "#1E90FF", "#FFFFFF", "#FF0000", "#8B0000", "#FF69B4")
 
 
+def wind_colors() -> list[tuple[float, float, float, float]]:
+    """RGBA color of each wind bin, lowest first (see WIND_REGIMES)."""
+    colors = []
+    for edges, name, (lo, hi) in WIND_REGIMES:
+        colors += [colormaps[name](v) for v in np.linspace(lo, hi, len(edges) - 1)]
+    return colors
+
+
 def wind_colormap() -> tuple[ListedColormap, BoundaryNorm]:
     """Discrete wind speed colormap and norm (one color per bin, m/s).
 
-    The legacy scripts listed 21 colors for these 20 bins, so matplotlib
-    skipped the second-to-last ("blue"); this is the 20 colors actually drawn.
+    Winds above 50 m/s use the top color.
     """
-    cmap = ListedColormap(WIND_COLORS, name="cm1_wind").with_extremes(over=WIND_COLORS[-1])
+    colors = wind_colors()
+    cmap = ListedColormap(colors, name="cm1_wind").with_extremes(over=colors[-1])
     return cmap, BoundaryNorm(WIND_BOUNDS, cmap.N)
 
 

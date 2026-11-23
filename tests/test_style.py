@@ -16,15 +16,32 @@ def test_wind_colormap_one_color_per_bin():
     bins = np.array(style.WIND_BOUNDS)
     centers = 0.5 * (bins[1:] + bins[:-1])
     assert list(norm(centers)) == list(range(cmap.N))
-
-
-def test_wind_colormap_matches_legacy_thresholds():
-    cmap, norm = style.wind_colormap()
-    color = dict(zip(style.WIND_BOUNDS[:-1], style.WIND_COLORS, strict=True))
-    assert color[26.0] == "yellow"  # severe threshold
-    assert color[33.4] == "darkred"  # significant-severe threshold
-    assert color[47.5] == "navy"  # what the legacy 21-color list actually drew
     assert np.allclose(cmap(norm(60.0)), cmap.get_over())
+
+
+def test_wind_thresholds_are_bin_edges():
+    assert style.SEVERE_WIND in style.WIND_BOUNDS
+    assert style.SIG_SEVERE_WIND == 33.5 and style.SIG_SEVERE_WIND in style.WIND_BOUNDS
+    assert {style.SEVERE_WIND, style.SIG_SEVERE_WIND} <= set(style.WIND_TICKS)
+
+
+def _lightness(rgba):
+    """Relative luminance (0 dark .. 1 light)."""
+    r, g, b = rgba[:3]
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def test_wind_colormap_smooth_within_regimes_and_jumps_at_thresholds():
+    colors = style.wind_colors()
+    edges = list(style.WIND_BOUNDS)
+    severe, sig = edges.index(style.SEVERE_WIND), edges.index(style.SIG_SEVERE_WIND)
+    steps = [np.abs(np.subtract(colors[i + 1][:3], colors[i][:3])).sum() for i in range(len(colors) - 1)]
+    # the two largest color changes between neighboring bins are exactly at the thresholds
+    assert sorted(np.argsort(steps)[-2:]) == [severe - 1, sig - 1]
+    # each regime runs one way in lightness (a smooth sequential ramp)
+    for lo, hi in ((0, severe), (severe, sig), (sig, len(colors))):
+        lum = [_lightness(c) for c in colors[lo:hi]]
+        assert all(b < a for a, b in zip(lum, lum[1:], strict=False))
 
 
 def test_diverging_colormap_is_symmetric():

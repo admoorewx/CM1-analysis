@@ -30,7 +30,16 @@ experiments:
     LR80: {path: $CM1_DATA/lapse_rate/lr_80, color: magenta, marker: "*", label: "8.0 K/km"}
     LR78: {path: $CM1_DATA/lapse_rate/lr_78, color: tomato, marker: "*", label: "7.8 K/km"}
 
-# Per-category options, read by the plots in that category as they are ported.
-# Categories: planar, timeseries, statistics, cross_section, pressure, wind
+# Run that comparison plots difference against, written "group/run".
+reference: control/control
+
+# Per-category plot options. Inside a category, a key naming a plot holds that
+# plot's options; other keys apply to every plot in the category.
+# `cm1plot list --category planar` shows each plot's options and defaults.
 plots:
-  cross_section: {}
+  planar:
+    extent_km: [800, 1400, 450, 1100]   # [xmin, xmax, ymin, ymax]; omit for the full domain
+    thpert: {heights_km: [0, 1, 3]}       # 0 = lowest model level; one figure per height
+    prspert: {heights_km: [0, 1, 3, 5]}
+    wind_swath: {refl_dbz: 45.0, interval_s: 7200}
+    compare: {rows: [cref, cpc, wind_swath]}

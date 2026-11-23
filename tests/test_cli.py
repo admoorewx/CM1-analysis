@@ -12,7 +12,7 @@ def test_inventory(cm1_path, capsys, clean_registry):
     assert f"{NZ} x {NY} x {NX}" in out
     assert "dx=500 m" in out
     assert "hydrometeors: qr" in out
-    assert "ok    planar/refl" in out
+    assert "ok    planar/refl (time)" in out
     assert "skip  cross_section/ppert: needs prspert" in out
 
 
@@ -29,4 +29,6 @@ def test_list(capsys, clean_registry):
         lambda: None
     )
     assert cli.main(["list", "--category", "planar"]) == 0
-    assert "planar/swath: Wind swath [needs: u10 or sws]" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "planar/swath [time]: Wind swath" in out
+    assert "needs: u10 or sws" in out
