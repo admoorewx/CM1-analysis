@@ -122,6 +122,17 @@ def common_options(category: Category | str, defaults: Mapping[str, Any]) -> Non
     _COMMON_OPTIONS.setdefault(Category(category), {}).update(defaults)
 
 
+def category_options(category: Category | str, category_config: Mapping[str, Any]) -> dict[str, Any]:
+    """A category's common options: defaults, overridden by the config's category-wide keys.
+
+    Lets one category reuse another's settings, e.g. timeseries of storm
+    motion placed exactly as the cross sections are.
+    """
+    common = dict(_COMMON_OPTIONS.get(Category(category), {}))
+    common.update({k: v for k, v in category_config.items() if k in common})
+    return common
+
+
 def resolve_options(spec: PlotSpec, category_config: Mapping[str, Any]) -> dict[str, Any]:
     """Merge defaults with the config's ``plots.<category>`` block for one plot.
 

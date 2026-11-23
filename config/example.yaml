@@ -52,3 +52,9 @@ plots:
     leading_edge: cold_pool   # edge tracked for c_x: cold_pool, or reflectivity (>= edge_dbz, their 40 dBZ)
     motion_window_s: 3600     # c_x is a line fit to the edge position over this window (theirs: 1 h)
     cmt_section: {average_s: 1800}   # budget profiles averaged over 30 min, as in Mahoney et al. (2009)
+  timeseries:
+    # metrics: [max_sws, max_wind, min_thpert, max_sus, system_speed, severe_coverage, cold_pool_wind]
+    severe_mps: 25.7          # 50 kt (Mahoney and Lackmann 2011)
+    storm_dbz: 30.0           # storm area that severe_coverage is normalized by
+    lead_extent_km: 40.0      # cold_pool_wind: leading part of the cold pool (Mahoney et al. 2009)
+    lead_depth_km: 3.0

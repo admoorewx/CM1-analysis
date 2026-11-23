@@ -53,6 +53,9 @@ cm1plot run planar -c config/local/derecho.yaml -e lapse_rate
 
 # Storm-following west-east cross sections for one run
 cm1plot run cross_section /path/to/control -o images/
+
+# Domain-reduced timeseries (figures plus CSV of the values); with -e, one line per run
+cm1plot run timeseries -c config/local/derecho.yaml -e lapse_rate
 ```
 
 Cross sections follow the system: by default each time's section runs
@@ -100,7 +103,7 @@ src/cm1analysis/
   config.py       YAML configuration
   style.py        Shared colormaps, font sizes and figure saving
   cli.py          cm1plot command
-  plots/          One module per category (planar and cross_section done; others being ported)
+  plots/          One module per category (planar, cross_section, timeseries done; others being ported)
 tests/          pytest suite using small synthetic CM1 files
 ```
 
