@@ -9,4 +9,5 @@ from . import (
     planar,  # noqa: F401
     statistics,  # noqa: F401
     timeseries,  # noqa: F401
+    wind,  # noqa: F401
 )
