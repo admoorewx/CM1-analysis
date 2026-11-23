@@ -58,3 +58,19 @@ plots:
     storm_dbz: 30.0           # storm area that severe_coverage is normalized by
     lead_extent_km: 40.0      # cold_pool_wind: leading part of the cold pool (Mahoney et al. 2009)
     lead_depth_km: 3.0
+  statistics:
+    swath_field: low_level_wind  # or sws (CM1's lowest-level swath, catches maxima between outputs)
+    wind_mask_mps: 10.0          # swath sample: points at least this windy
+    wind_area_mps: 26.0          # damaging-wind footprint area
+    cold_pool_mask_k: -1.0       # cold-pool sample: theta' at most this
+    cold_pool_area_k: -2.0       # significant cold-pool footprint area
+    effect_sizes: {swath_percentiles: [90, 95, 100], cold_pool_percentiles: [10, 5, 0]}
+  pressure:
+    # roi_km: [1200, 1300, 700, 800]   # [xmin, xmax, ymin, ymax]; omit to derive it from reflectivity
+    buffer_km: 50
+    sensitivity: []           # the legacy default runs all variants B-H on every time
+    crop_test: false
+    frame_test: false
+    height_km: 1.0            # plan-view height of the figures
+  wind:
+    wind_partition: {height_km: 5.0}   # level to partition; null for the lowest level

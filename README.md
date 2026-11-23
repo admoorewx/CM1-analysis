@@ -16,10 +16,9 @@ consistent set of analysis figures:
 | `pressure` | Vertical momentum forcing: dynamic pressure-gradient force and effective buoyancy |
 | `wind` | Helmholtz partition of the horizontal wind (rotational, divergent, harmonic) |
 
-> **Status:** early development. The shared core (file reading, configuration,
-> plot registry and figure style) is in place and tested. Plots are being
-> ported into the categories above one at a time; `cm1plot list` shows what
-> is available.
+> **Status:** all six categories are ported from the original analysis
+> scripts and tested; `cm1plot list` shows every plot, the fields it needs
+> and its options.
 
 ## Installation
 
@@ -56,6 +55,13 @@ cm1plot run cross_section /path/to/control -o images/
 
 # Domain-reduced timeseries (figures plus CSV of the values); with -e, one line per run
 cm1plot run timeseries -c config/local/derecho.yaml -e lapse_rate
+
+# Swath and cold-pool distributions and effect sizes against the reference run
+cm1plot run statistics -c config/local/derecho.yaml -e lapse_rate --scope experiment
+
+# Pressure (DVPGF / effective buoyancy) and wind (Helmholtz) decompositions
+cm1plot run pressure /path/to/control -c config/local/derecho.yaml --times 7200
+cm1plot run wind /path/to/control -o images/
 ```
 
 Cross sections follow the system: by default each time's section runs
@@ -66,6 +72,16 @@ leading edge's position over an hour. `y_km`, `window_km`,
 `trailing_fraction`, `average_km` and `storm_u` in the config override
 these; see `cm1analysis/sections.py`. The momentum-transport plot
 (`cmt_section`) follows Mahoney et al. (2009, MWR 137, 3316).
+
+The `pressure` and `wind` decompositions solve elliptic problems per output
+time. Each plot computes its decomposition once and caches it as netCDF
+under `<output>/<run>/<category>/derived/`; later runs reuse a cached file
+when the stored compute options match (set `recompute: true` to force a new
+solve). Because there is one derived file per time, HPC jobs can split a run
+with `--times`. The pressure solve is expensive at full resolution: restrict
+it with `roi_km` and turn off the diagnostic tests (`sensitivity: []`,
+`crop_test: false`, `frame_test: false`) for production runs. The wind
+partition can also be run on its own with `python -m cm1analysis.wind`.
 
 Plots run at one of three scopes: once per output **time**, once per **run**
 (plots that accumulate through time, such as swaths), or once per
@@ -100,10 +116,13 @@ src/cm1analysis/
   registry.py     Plot registry: required fields, scope, options
   pipeline.py     Runs plots over runs, files and times; contexts passed to plots
   sections.py     Storm-following cross-section placement, storm motion, section cache
+  stats.py        Effect sizes and sample statistics (Cohen's d, Cliff's delta, K-S D, ...)
+  pressure/       Vertical momentum forcing: Poisson solves for DVPGF and effective buoyancy
+  wind/           Lynch (1989) partition of the horizontal wind on the C-grid
   config.py       YAML configuration
   style.py        Shared colormaps, font sizes and figure saving
   cli.py          cm1plot command
-  plots/          One module per category (planar, cross_section, timeseries done; others being ported)
+  plots/          One module per category
 tests/          pytest suite using small synthetic CM1 files
 ```
 
