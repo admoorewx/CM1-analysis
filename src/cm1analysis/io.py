@@ -15,11 +15,14 @@ matters at full resolution: one 3-D field of a 1600 x 1600 x 88 grid is about
 from __future__ import annotations
 
 import glob
+import logging
 from collections.abc import Iterator, Sequence
 from pathlib import Path
 
 import numpy as np
 from netCDF4 import Dataset
+
+log = logging.getLogger(__name__)
 
 LENGTH_TO_METERS = {"km": 1000.0, "m": 1.0}
 UNIFORM_TOLERANCE = 1e-3  # relative; float32 km coordinates vary by about 1e-4
@@ -229,8 +232,16 @@ class CM1File:
 
 # ---------------------------------------------------------------- run level
 def find_output_files(run_dir: str | Path, pattern: str = DEFAULT_PATTERN) -> list[Path]:
-    """Sorted CM1 output files in a run directory (CM1 zero-pads file numbers)."""
-    files = sorted(Path(p) for p in glob.glob(str(Path(run_dir) / pattern)))
+    """Sorted CM1 output files in a run directory (CM1 zero-pads file numbers).
+
+    CM1's domain-statistics file (``<base>_stats.nc``, e.g. ``cm1out_stats.nc``)
+    matches the usual ``cm1out_*.nc`` pattern but holds no 3-D grid (its
+    coordinates are placeholders in degrees), so it is left out.
+    """
+    matches = sorted(Path(p) for p in glob.glob(str(Path(run_dir) / pattern)))
+    files = [f for f in matches if not f.stem.endswith("_stats")]
+    for skipped in sorted(set(matches) - set(files)):
+        log.debug("skipping CM1 statistics file %s", skipped)
     if not files:
         raise FileNotFoundError(f"no files matching {pattern!r} in {run_dir}")
     return files

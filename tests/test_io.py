@@ -117,3 +117,13 @@ def test_find_and_iterate_run(tmp_path):
     assert [t for _, _, t in iter_times(files)] == [0.0, 300.0, 600.0]
     with pytest.raises(FileNotFoundError):
         find_output_files(tmp_path, pattern="wforce_*.nc")
+
+
+def test_run_listing_skips_cm1_stats_file(tmp_path):
+    """CM1's cm1out_stats.nc matches cm1out_*.nc but has placeholder coordinates in degrees."""
+    write_cm1_file(tmp_path / "cm1out_000001.nc")
+    with Dataset(tmp_path / "cm1out_stats.nc", "w") as ds:
+        ds.createDimension("xh", 1)
+        ds.createDimension("time", None)
+        ds.createVariable("xh", "f4", ("xh",)).units = "degree_east"
+    assert [f.name for f in find_output_files(tmp_path)] == ["cm1out_000001.nc"]
