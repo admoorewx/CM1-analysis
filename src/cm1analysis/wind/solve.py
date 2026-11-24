@@ -5,6 +5,8 @@ import scipy.sparse as sp
 from scipy.fft import dstn, idstn
 from scipy.sparse.linalg import splu
 
+from ..parallel import fft_workers
+
 
 def _eigenvalues(nmodes_x, nmodes_y, nx, ny, dx, dy):
     k = np.arange(1, nmodes_x + 1)
@@ -16,6 +18,7 @@ def _eigenvalues(nmodes_x, nmodes_y, nx, ny, dx, dy):
 
 def solve_chi(delta, dx, dy, workers=-1):
     """Solve lap(chi) = delta at cell centers using a type-II DST."""
+    workers = fft_workers(workers)
     ny, nx = delta.shape
     lam = _eigenvalues(nx, ny, nx, ny, dx, dy)
     spectrum = dstn(delta, type=2, norm="ortho", workers=workers)
@@ -28,6 +31,7 @@ def solve_psi(zeta, dx, dy, workers=-1):
     zeta has shape (ny-1, nx-1). The result has shape (ny+1, nx+1) and is
     zero on the outer ring.
     """
+    workers = fft_workers(workers)
     ny, nx = zeta.shape[0] + 1, zeta.shape[1] + 1
     lam = _eigenvalues(nx - 1, ny - 1, nx, ny, dx, dy)
     spectrum = dstn(zeta, type=1, norm="ortho", workers=workers)

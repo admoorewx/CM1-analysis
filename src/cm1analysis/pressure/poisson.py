@@ -25,6 +25,8 @@ horizontal mean of phi to zero.
 import numpy as np
 from scipy.fft import dctn, dstn, idctn, idstn, irfft2, rfft2
 
+from ..parallel import fft_workers
+
 LATERAL_CONDITIONS = ("periodic", "neumann", "dirichlet")
 
 
@@ -71,6 +73,7 @@ def _coefficients(grid, kc, kf):
 def solve(rhs, grid, lateral="periodic", kc=None, kf=None, workers=-1):
     """Return (phi, info). info holds 'solvability' and 'mean_forcing_removed'."""
     _check_lateral(lateral)
+    workers = fft_workers(workers)
     rhs = np.asarray(rhs, dtype=np.float64)
     nz, ny, nx = rhs.shape
     if nz != grid.nz:

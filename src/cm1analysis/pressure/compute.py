@@ -67,7 +67,7 @@ class ComputeOptions:
     crop_test     run the buffer-trim test
     frame_test    run the reference-frame test
     double        store fields as float64 (default float32)
-    workers       scipy.fft workers (-1: all cores)
+    workers       scipy.fft workers (-1: every CPU of the job's allocation)
     """
 
     variant: str = "A"
