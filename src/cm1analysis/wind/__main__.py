@@ -59,7 +59,9 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         help=f"cref threshold for the automatic box (default: {DEFAULT_ROI_DBZ:g})",
     )
     parser.add_argument("--overwrite", action="store_true", help="replace existing outputs")
-    parser.add_argument("--workers", type=int, default=-1, help="scipy.fft workers")
+    parser.add_argument(
+        "--workers", type=int, default=-1, help="scipy.fft workers (-1: every CPU of the job's allocation)"
+    )
     return parser.parse_args(argv)
 
 
